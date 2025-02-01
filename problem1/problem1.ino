@@ -2,10 +2,10 @@
 
 Servo servo; 
 
-#define BLACK = 0;
-#define RED = 1;
-#define GREEN = 2;
-#define BLUE = 3;
+#define BLACK 0
+#define RED 1
+#define GREEN 2
+#define BLUE 3
 
 int curr_colour = -1; 
 
@@ -15,13 +15,13 @@ unsigned long t1;
 // MOTOR 1 IS RIGHT SIDE
 // MOTOR 2 IS LEFT SIDE
 
-#define SERVO_IN = 5;   // PWM enabled
-#define DRIVER_ENA = 6;   // PWM enabled
-#define DRIVER_IN1 = 7;
-#define DRIVER_IN2 = 8;
-#define DRIVER_IN3 = 9;   // PWM enabled
-#define DRIVER_IN4 = 10;  // PWM enabled
-#define DRIVER_ENB = 11;  // PWM enabled
+#define SERVO_IN 5   // PWM enabled
+#define DRIVER_ENA 6   // PWM enabled
+#define DRIVER_IN1 7
+#define DRIVER_IN2 8
+#define DRIVER_IN3 9   // PWM enabled
+#define DRIVER_IN4 10  // PWM enabled
+#define DRIVER_ENB 11  // PWM enabled
 
 
 
@@ -40,7 +40,7 @@ unsigned long t1;
 // #define G_LED
 // #define B_LED
 
-int brightness 150;
+int brightness = 150;
 
 
 void setup() {
@@ -56,8 +56,8 @@ void setup() {
     // pinMode(G_LED, OUTPUT);
     // pinMode(B_LED, OUTPUT);
 
-    servo1.attach(SERVO_IN);
-    servo.write(0);
+    servo.attach(SERVO_IN);
+    servo.write(25);
 
     //digitalWrite(s0, HIGH);
     //digitalWrite(s1, HIGH);
@@ -83,7 +83,7 @@ void dropFlag(){
   //buffer to make sure that the car is fully stopped
   delay(1000);
   //open clamp to drop
-  servo1.write(25);
+  servo.write(25);
 }
 
 void start(){
@@ -100,7 +100,7 @@ void findCircle(){
   int s_left = 1;
   while (curr_colour != BLACK){
     analogWrite(DRIVER_ENA, s_right);
-    analogWrite(DRIVER_ENB s_left);
+    analogWrite(DRIVER_ENB, s_left);
 
     //move for a bit
     motorControl(HIGH, LOW, HIGH, LOW);
@@ -118,7 +118,7 @@ void findCircle(){
   //curr_colour is no longer black we found first ring. Done
   // reset wheel speeds
   analogWrite(DRIVER_ENA, 255);
-  analogWrite(DRIVER_ENB 255);
+  analogWrite(DRIVER_ENB, 255);
 }
 
 void findCentre(){
