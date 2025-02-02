@@ -8,6 +8,8 @@ Servo servo;
 #define BLUE 3
 
 int curr_colour = -1; 
+int prev_colour = -1;
+
 
 unsigned long t0;
 unsigned long t1;
@@ -89,6 +91,7 @@ void start(){
   setupFlag(); //clamp holds on to flag
   findCircle(); //find the outermost ring
   findCentre(); //traverse to centre
+  alignPoint(); //get to the middle of the final ring/cicle
   dropFlag(); // back up a little and release clamp
 }
 
@@ -122,7 +125,7 @@ void findCircle(){
 
 void findCentre(){
   int rings_found = 1; // Assuming findCircle terminated, we are on the first ring
-  int prev_colour = BLACK;
+  prev_colour = BLACK;
 
   while (rings_found < 5){
     int poll_colour =  pollColour();
@@ -152,6 +155,7 @@ void findCentre(){
   // reset wheel speeds
   analogWrite(DRIVER_ENA, 255);
   analogWrite(DRIVER_ENB, 255);
+  motorControl(LOW, LOW, LOW, LOW);
 }
 
 
@@ -163,12 +167,100 @@ void motorControl(int state1, int state2, int state3, int state4) {
   digitalWrite(DRIVER_IN4, state4);
 }
 
-void loop(){
-  //nothing to do here, NOP
+
+/**
+1. Go forward till we detect colour from previous ring and record the time it took to do this 
+2. turn left, then do one of the following:
+  scenario 1: if the time to the end of the cycle is higher than the previous, turn left and 
+  find out how much time it takes to drive to the edge of the circle. Do this until it stops 
+  increase. Stop once the time is smaller. Turn back to the previous position
+
+  scenario 2: if the time is less, do the same as scenario 2: but in the right direction.
+
+3. for half of the recorded time, drive forward and stop, the sensor is now in the middle 
+and we can start flag dropping procedure
+*/
+void alignPoint(){
+  //now in the final ring/circle
+  unsigned long longest_time = 0;
+  unsigned long curr_time = 0;
+  analogWrite(DRIVER_ENA, 255);
+  analogWrite(DRIVER_ENB, 255);
+  bool move_left = true;
+  //get benchmark time of our current direction
+  longest_time = getLength();
+  delay(100);
+
+
+  //check if running along the distance slightly left of us is longer (more time = longer)
+  pivot(true);
+  curr_time = getLength();
+
+  move_left = (curr_time > longest_time);
+
+  curr_time = longest_time;
+
+  while (curr_time >= longest_time){
+    pivot(move_left);
+    curr_time = getLength();
+    if (curr_time > longest_time){
+      longest_time = curr_time;
+    }
+  }
+
+  //pivot one back since we did not reset to get to the angle with the longest length
+
+  pivot(!move_left);
+
+  //now travel half the distance to get to the centre point now that we're in the correct angle
+  
+  motorControl(HIGH, LOW, HIGH, LOW);
+  delay(longest_time/2);
+  motorControl(LOW, LOW, LOW, LOW);
+
 }
 
 
 
+unsigned long getLength(){
+  unsigned long t_end;
+  unsigned long t_start = millis(); 
+  int poll_colour = curr_colour;
+
+  motorControl(HIGH, LOW, HIGH, LOW);
+    while (poll_colour == curr_colour){
+    poll_colour = pollColour();
+    delay(20); //TODO: finetune this value for precision vs runtime
+  }
+  motorControl(LOW, LOW, LOW, LOW);
+  t1 = millis();
+  unsigned long time = t1 - t0;
+
+  //back up to original point
+  delay(100);
+
+  motorControl(LOW, HIGH, LOW, HIGH);
+  delay(time);
+  motorControl(LOW, LOW, LOW, LOW);
+
+  return time;
+}
+
+
+void pivot (bool go_left){
+  int pivot_length = 50;
+  if (go_left){
+    motorControl(LOW, HIGH, HIGH, LOW);
+  }else{
+    motorControl(HIGH, LOW, LOW, HIGH);
+  }
+  delay(50);
+  motorControl(LOW, LOW, LOW, LOW);
+}
+
+void loop(){
+  //nothing to do here, NOP
+}
 
 int pollColour(){
   //placeholder function for the colour sensor
