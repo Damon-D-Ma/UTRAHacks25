@@ -93,8 +93,6 @@ void start(){
   dropFlag(); // back up a little and release clamp
 }
 
-
-
 void findCircle(){
   int s_right = 255;
   int s_left = 1;
@@ -108,7 +106,7 @@ void findCircle(){
     // slightly increase the left wheel speed so the
     // car continues to drive in a circle
     if (s_left < 255){
-      s_left++;
+      s_left++; //this could be a problem if we reach max speed and still didn't find anything.
     }
 
     //check colour to see if we reached a ring
@@ -119,15 +117,42 @@ void findCircle(){
   // reset wheel speeds
   analogWrite(DRIVER_ENA, 255);
   analogWrite(DRIVER_ENB, 255);
+  motorControl(LOW, LOW, LOW, LOW);
+
 }
 
 void findCentre(){
   int rings_found = 1; // Assuming findCircle terminated, we are on the first ring
+  int prev_colour = BLACK;
 
+  while (rings_found < 5){
+    int poll_colour =  pollColour();
+    // move forward until we see either a new colour, or turn if we see the previous colour 
+    while (poll_colour != prev_colour || poll_colour != curr_colour){
+        analogWrite(DRIVER_ENA, 255);
+        analogWrite(DRIVER_ENB, 255);
+        motorControl(HIGH, LOW, HIGH, LOW);
+        poll_colour = pollColour();
+        if (poll_colour == prev_colour){
+            //stop
+            motorControl(LOW, LOW, LOW, LOW);
+            delay(100);
+            //pivot by making the right wheel go forward, the left goes backwards
+            motorControl(HIGH, LOW, LOW, HIGH);
+            delay(500); //TODO: tune the timing for the right amount of turn
+            //resume normal operation
+            motorControl(HIGH, LOW, HIGH, LOW);
+        }
+        delay(20);
+    }
+    prev_colour = curr_colour;
+    curr_colour = poll_colour;
+    rings_found++;
+  }
 
-
-
-
+  // reset wheel speeds
+  analogWrite(DRIVER_ENA, 255);
+  analogWrite(DRIVER_ENB, 255);
 }
 
 
