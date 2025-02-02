@@ -17,13 +17,13 @@ unsigned long t1;
 // MOTOR 1 IS RIGHT SIDE
 // MOTOR 2 IS LEFT SIDE
 
-#define SERVO_IN 5   // PWM enabled
-#define DRIVER_ENA 6   // PWM enabled
-#define DRIVER_IN1 7
-#define DRIVER_IN2 8
-#define DRIVER_IN3 9   // PWM enabled
-#define DRIVER_IN4 10  // PWM enabled
-#define DRIVER_ENB 11  // PWM enabled
+#define SERVO_IN 3   // PWM enabled
+#define DRIVER_ENA 5   // PWM enabled
+#define DRIVER_IN1 6
+#define DRIVER_IN2 7
+#define DRIVER_IN3 8   // PWM enabled
+#define DRIVER_IN4 9  // PWM enabled
+#define DRIVER_ENB 10  // PWM enabled
 
 // Pin Layout
 const int color_S0  = 11;
