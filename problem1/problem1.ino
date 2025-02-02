@@ -23,11 +23,6 @@ unsigned long t1;
 #define DRIVER_IN4 10  // PWM enabled
 #define DRIVER_ENB 11  // PWM enabled
 
-
-
-
-
-
 //placeholder values until we figure out wiring
 // #define s0 = 1000;
 // #define s1 = 10000;
@@ -78,10 +73,14 @@ void setupFlag() {
 }
 
 void dropFlag(){
-  //TODO: do backup procedure here, not sure what the steps are yet
+  //drive backwards a little bit, assuming that the
+  // colour sensor is in the middle under the car
+  // and the clamp is in the front
+  analogWrite(DRIVER_ENA, 255);
+  analogWrite(DRIVER_ENB, 255);
+  motorControl(LOW, HIGH, LOW, HIGH);
+  delay(1000); //TODO: fine tune this to make sure it backs up an appropriate amount
 
-  //buffer to make sure that the car is fully stopped
-  delay(1000);
   //open clamp to drop
   servo.write(25);
 }
