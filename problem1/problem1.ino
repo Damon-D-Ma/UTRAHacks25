@@ -25,17 +25,28 @@ unsigned long t1;
 #define DRIVER_IN4 10  // PWM enabled
 #define DRIVER_ENB 11  // PWM enabled
 
-//placeholder values until we figure out wiring
-// #define s0 = 1000;
-// #define s1 = 10000;
-// #define s2 = 100000;
-// #define s3 = 10000000;
-// #define out = 100000000;
-// #define SERVO = 1000000000;
+// Pin Layout
+const int color_S0  = 11;
+const int color_S1  = 12;
+const int color_OE  = 13;
+const int color_OUT = A0;
+const int color_S2  = A1;
+const int color_S3  = A2;
 
-// #define R_LED
-// #define G_LED
-// #define B_LED
+// Empirically found values: 
+const int red_low = 61;
+const int red_high = 83;
+const int green_low = 115;
+const int green_high = 227;
+const int blue_low = 83;
+const int blue_high = 240;
+const int white_low = 83;
+const int white_high = 240;
+
+int redColor;
+int greenColor;
+int blueColor;
+int whitePW;
 
 int brightness = 150;
 
@@ -43,21 +54,21 @@ int brightness = 150;
 void setup() {
     Serial.begin(9600);
 
-    // pinMode(s0, OUTPUT);
-    // pinMode(s1, OUTPUT);
-    // pinMode(s2, OUTPUT);
-    // pinMode(s3, OUTPUT);
-    // pinMode(out, INPUT);
-
-    // pinMode(R_LED, OUTPUT);
-    // pinMode(G_LED, OUTPUT);
-    // pinMode(B_LED, OUTPUT);
+    // Set S0 - S3 as outputs
+    pinMode(color_S0, OUTPUT);
+    pinMode(color_S1, OUTPUT);
+    pinMode(color_S2, OUTPUT);
+    pinMode(color_S3, OUTPUT);
+    pinMode(color_OE, OUTPUT);
+    // Set Sensor output as input
+    pinMode(color_OUT, INPUT);
+    // Set Pulse Width scaling to 20%
+    digitalWrite(color_S0, HIGH);
+    digitalWrite(color_S1, LOW);
+    digitalWrite(color_OE, LOW);
 
     servo.attach(SERVO_IN);
     servo.write(25);
-
-    //digitalWrite(s0, HIGH);
-    //digitalWrite(s1, HIGH);
     start();
 }
 
@@ -112,7 +123,7 @@ void findCircle(){
     }
 
     //check colour to see if we reached a ring
-    curr_colour = pollColour();
+    curr_colour = getColour();
     delay(20); // TODO: FINE TUNE THIS TO GET BEST BALANCE BETWEEN PRECISION AND SPEEED
   }
   //curr_colour is no longer black we found first ring. Done
@@ -128,13 +139,13 @@ void findCentre(){
   prev_colour = BLACK;
 
   while (rings_found < 5){
-    int poll_colour =  pollColour();
+    int poll_colour =  getColour();
     // move forward until we see either a new colour, or turn if we see the previous colour 
     while (poll_colour != prev_colour || poll_colour != curr_colour){
         analogWrite(DRIVER_ENA, 255);
         analogWrite(DRIVER_ENB, 255);
         motorControl(HIGH, LOW, HIGH, LOW);
-        poll_colour = pollColour();
+        poll_colour = getColour();
         if (poll_colour == prev_colour){
             //stop
             motorControl(LOW, LOW, LOW, LOW);
@@ -229,7 +240,7 @@ unsigned long getLength(){
 
   motorControl(HIGH, LOW, HIGH, LOW);
     while (poll_colour == curr_colour){
-    poll_colour = pollColour();
+    poll_colour = getColour();
     delay(20); //TODO: finetune this value for precision vs runtime
   }
   motorControl(LOW, LOW, LOW, LOW);
@@ -262,7 +273,90 @@ void loop(){
   //nothing to do here, NOP
 }
 
-int pollColour(){
-  //placeholder function for the colour sensor
-  return -1;
+int getColour(){
+  int prev = pollColour();
+  int curr = pollColour();
+
+  while (prev != curr){
+    prev = curr; 
+    curr = pollColour();
+  }
+  return curr;
 }
+
+
+int pollColour(){
+
+  // get color Pw gets the Pulse Frequency of the sensor's image for that color
+  // This function then inverts it and puts it onto a linear map to normalize.
+  // Visible colour is the max vaue amoung the three.
+  redColor = map(getRedPW(), red_low, red_high, 255, 0);
+	delay(50);
+  greenColor = map(getGreenPW(), green_low, green_high, 255, 0);
+	delay(50);
+  blueColor = map(getBluePW(), blue_low, blue_high, 255, 0);
+	delay(50);
+  whitePW = getWhitePW();
+
+  if (whitePW > 85) {
+    return BLACK;
+  } else if (max3(redColor, blueColor, greenColor) == redColor) {
+    return RED;
+  } else if (max3(redColor, blueColor, greenColor) == greenColor) {
+    return GREEN;
+  } else if (max3(redColor, blueColor, blueColor) == blueColor) {
+    return BLUE;
+  }
+
+
+}
+
+
+
+
+
+
+// Being Lazy
+int max3(int n1, int n2, int n3) {
+  return max(n1, max(n2, n3));
+}
+
+// Function to read Red Pulse Widths
+int getRedPW() {
+	// Set sensor to read Red only
+	digitalWrite(color_S2, LOW);
+	digitalWrite(color_S3, LOW);
+  delay(10);
+	int PW = pulseIn(color_OUT, LOW);
+	return PW;
+}
+
+// Function to read Blue Pulse Widths
+int getBluePW() {
+	// Set sensor to read Blue only
+	digitalWrite(color_S2, LOW);
+	digitalWrite(color_S3, HIGH);
+  delay(10);
+	int PW = pulseIn(color_OUT, LOW);
+	return PW;
+}
+
+// Function to read Green Pulse Widths
+int getGreenPW() {
+	// Set sensor to read Green only
+	digitalWrite(color_S2, HIGH);
+	digitalWrite(color_S3, HIGH);
+  delay(10);
+	int PW = pulseIn(color_OUT, LOW);
+	return PW;
+}
+
+int getWhitePW() {
+	// Set sensor to read Overall colour
+	digitalWrite(color_S2, HIGH);
+	digitalWrite(color_S3, LOW);
+  delay(10);
+	int PW = pulseIn(color_OUT, LOW);
+	return PW;
+}
+
