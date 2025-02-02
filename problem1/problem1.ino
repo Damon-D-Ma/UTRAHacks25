@@ -22,7 +22,7 @@ unsigned long t1;
 #define DRIVER_IN1 6
 #define DRIVER_IN2 7
 #define DRIVER_IN3 8   // PWM enabled
-#define DRIVER_IN4 9  // PWM enabled
+#define DRIVER_IN4 4  // PWM enabled
 #define DRIVER_ENB 10  // PWM enabled
 
 // Pin Layout
